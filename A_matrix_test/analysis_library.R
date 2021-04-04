@@ -8,9 +8,14 @@ generate_simulation_splatter <- function(dropout_index, seed_value, nGenes = 800
   #        nGenes: the number of genes in the simulation data. The default is 800
 
   # Set up the parameters
+  
+  # use individual batches to simulated donors.
   params = newSplatParams()
 
-  params = setParams(params, list(batchCells = 1000,
+  ncellsperbulk = 100
+  nbulk = 10
+  ncells = ncellsperbulk*nbulk
+  params = setParams(params, list(batchCells = rep(ncellsperbulk,nbulk),
                                   nGenes = nGenes,
                                   group.prob = c(0.20, 0.35, 0.45),
                                   de.prob = c(0.045, 0.045, 0.045),
@@ -52,7 +57,7 @@ generate_simulation_splatter <- function(dropout_index, seed_value, nGenes = 800
   percentage_zeros = round(Matrix::nnzero(data_dropout == 0, na.counted = NA)/
                              (dim(data_dropout)[1]*dim(data_dropout)[2])*100)
 
-
+  browser()
   # generate the bulk RNAseq data
   data_bulk = data.frame(val = rowMeans(data_true))
 
@@ -64,17 +69,30 @@ generate_simulation_splatter <- function(dropout_index, seed_value, nGenes = 800
   #                 group: the group label
 
   data = list()
-
-  data$data_bulk = data_bulk
-
   data$data_dropout = data_dropout
-
   data$data_true = data_true
-
   data$percentage_zeros = percentage_zeros
+  
+  # # get the pseudo bulk data D where each batch D[i,] is a bulk sample, and D[i,j] is the average cpm for gene j in bulk sample i
+  data$data_bulk = aggregate(as.data.frame(t(sim@assays@data@listData$TrueCounts)),list(sim@colData$Batch),mean)
+  rownames(data$data_bulk) = data$data_bulk[,1]
+  data$data_bulk = data$data_bulk[,-1]
 
-  data$group = colData(sim)@listData$Group
-
+  # # get the coefficient matrix for regression
+  batchinds = lapply(unique(sim@colData$Batch),function(x) which(sim@colData$Batch==x))
+  # the cell type percentages for each bulk sample
+  deconv = lapply(batchinds, function(x) table(sim@colData$Group[x])/length(x))
+  A = matrix(0,nbulk,ncells)
+  for(i in 1:nbulk){
+    for(j in 1:ncells){
+      # a[i,j] = % celltype(cell j) in bulk sample i / number of cells
+      # such that A*X = D' where D[i,] is the average expression per cell of all genes in bulk sample i
+      A[i,j] = deconv[[i]][sim@colData$Group[j]] / ncells
+    }  
+  }
+  
+  data$data_A = A
+  
   return(data)
 }
 
@@ -90,7 +108,7 @@ generate_save_data <- function(dropout_index, seed_value){
 
   # generate the folder saving the simulation data
   dir.create(file.path('simulation_data'), showWarnings = FALSE)
-
+  # browser()
   # save the data as RDS format
   saveRDS(data_simulation,
           file = paste0('simulation_data/simulation_data_dropout_index_',
@@ -102,171 +120,14 @@ generate_save_data <- function(dropout_index, seed_value){
 
 }
 
-######## DrImpute ##############
-run_drimpute <- function(dropout_index, seed_value){
-
-  # Parameter in the function
-  # dropout_index: the index of dropout_mid to control the dropout rate
-  # seed_value: the random seed
-
-  # load the raw data
-  data <- readRDS(file = paste0('simulation_data/simulation_data_dropout_index_',
-                                dropout_index,
-                                '_seed_',
-                                seed_value,
-                                '.rds')
-  )
-
-  # build the folder saving the imputed data using DrImpute
-  path <- "imputation_drimpute_data/"
-
-  dir.create(file.path(path), showWarnings = FALSE)
-
-  # impute the data using DrImpute
-  data_dropout <- as.matrix(data$data_dropout)
-
-  exdata <- DrImpute(data_dropout)
-
-  # write the data
-  write.table(exdata,
-              paste0(path, "drimpute_",dropout_index,"_",seed_value,".csv"),
-              sep=',',
-              row.names = F,
-              col.names = F
-  )
-
-}
-
-######## scImpute ##############
-run_scimpute <- function(dropout_index, seed_value){
-
-  # Parameter in the function
-  # dropout_index: the index of dropout_mid to control the dropout rate
-  # seed_value: the random seed
-
-
-  # load the data
-  data = readRDS(file = paste0('simulation_data/simulation_data_dropout_index_',
-                               dropout_index,
-                               '_seed_',
-                               seed_value,
-                               '.rds')
-  )
-
-  # build the folder saving the imputed data using scimpute method
-  path = "imputation_scimpute_data/"
-  dir.create(file.path(path), showWarnings = FALSE)
-
-  # impute the data using scImpute
-  data_dropout = data$data_dropout
-
-  write.table(data_dropout,paste0(path,
-                                  "dropout_scimpute_",
-                                  dropout_index,"_",
-                                  seed_value,".csv"),
-              sep=',',
-              row.names = TRUE,
-              col.names = TRUE
-  )
-
-  file.remove(paste0(path, "scimpute_", dropout_index, "_", seed_value,"_*"))
-
-  # run scImpute
-  scimpute(
-    paste0(path, "dropout_scimpute_",dropout_index,"_",seed_value,".csv"),
-    infile = "csv",
-    outfile = "csv",
-    out_dir = paste0(path, "scimpute_", dropout_index, "_", seed_value,"_"),
-    drop_thre = 0.5,
-    Kcluster = 2,
-    ncores = 2)
-  #
-  # clean the data
-  data_dropout = read.table( file = paste0(path, "scimpute_",
-                                           dropout_index, "_",
-                                           seed_value,
-                                           "_scimpute_count.csv") ,
-                             header = TRUE, sep=",")
-
-  data_dropout$X = NULL
-
-  # save the data
-  write.table(data_dropout,
-              paste0(path, "data_imputation_scimpute_",dropout_index,"_",seed_value,".csv"),
-              sep=',',
-              row.names = F,
-              col.names = F
-  )
-
-}
-
-######## MAGIC ##############
-# here we use python script to run magic and we post the python script here.
-# -----------------------------------------------------------------------------
-# import sys
-# import os
-# import magic
-# import pandas as pd
-#
-# cwd = os.getcwd()
-#
-# if not os.path.exists(cwd+"/imputation_magic_data"):
-#   os.makedirs(cwd+"/imputation_magic_data")
-#
-# X =pd.read_csv("simulation_data/simulation_data_dropout_index_"+str(dropout_value)+"_seed_"+str(seed_value)+".txt",sep = ' ', header=None)
-#
-# magic_operator = magic.MAGIC()
-# X_magic = magic_operator.fit_transform(X.T)
-#
-# out_magic = X_magic.T
-# out_magic.to_csv(cwd+"/imputation_magic_data/magic_"+str(dropout_value)+"_"+str(seed_value)+".csv", sep = '\t', header= None)
-# -----------------------------------------------------------------------------
-
-
-######## VIPER ##############
-run_viper <- function(dropout_index, seed_value){
-
-  # Parameter in the function
-  # dropout_index: the index of dropout_mid to control the dropout rate
-  # seed_value: the random seed
-
-  # load the raw data
-  data <- readRDS(file = paste0('simulation_data/simulation_data_dropout_index_',
-                                dropout_index,
-                                '_seed_',
-                                seed_value,
-                                '.rds')
-  )
-
-  # build the folder saving the imputed data using DrImpute
-  path <- "imputation_viper_data/"
-
-  dir.create(file.path(path), showWarnings = FALSE)
-
-  # impute the data using VIPER
-  data_dropout <- as.matrix(data$data_dropout)
-
-  exdata <- VIPER(data_dropout, num = 5000, percentage.cutoff = 0.1, minbool = FALSE, alpha = 1,
-                  report = FALSE, outdir = NULL, prefix = NULL)
-
-  # write the data
-  write.table(exdata$imputed,
-              paste0(path, "viper_",dropout_index,"_",seed_value,".csv"),
-              sep=',',
-              row.names = F,
-              col.names = F
-  )
-
-}
 
 ######## SCRABBLE ##############
 run_scrabble <- function(dropout_index, seed_value){
-
   # Parameter in the function
   # dropout_index: the index of dropout_mid to control the dropout rate
   # seed_value: the random seed
-
-
+  
+  
   # load the data
   data = readRDS(file = paste0('simulation_data/simulation_data_dropout_index_',
                                dropout_index,
@@ -274,23 +135,24 @@ run_scrabble <- function(dropout_index, seed_value){
                                seed_value,
                                '.rds')
   )
-
-
-
+  
+  
   path = "imputation_scrabble_data/"
-
+  
   dir.create(file.path(path), showWarnings = FALSE)
-
+  
   # impute the data using DrImpute
   data1 = list()
-
+  
+  # single cell data with dropped out values
   data1[[1]] = data$data_dropout
-
+  
   data1[[2]] = data$data_bulk
-
+  
+  data1[[3]] = data$data_A
+  
   # set up the parameters
   parameter = c(1, 1e-06, 1e-04)
-
   # run scrabble
   result = scrabble(data1,
                     parameter = parameter,
@@ -298,15 +160,16 @@ run_scrabble <- function(dropout_index, seed_value){
                     error_out_threshold = 1e-7,
                     nIter_inner = 100,
                     error_inner_threshold = 1e-5)
-
+  
   # write the data
   write.table(result,
-              paste0(path, "scrabble_",dropout_index,"_",seed_value,"_",j,".csv"),
+              paste0(path, "scrabble_a_",dropout_index,"_",seed_value,".csv"),
               sep=',',
               row.names = F,
               col.names = F)
-
+  
 }
+
 
 
 ######## Data Analysis ##############

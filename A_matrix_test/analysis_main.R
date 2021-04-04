@@ -3,6 +3,14 @@
 # Please contact Tao Peng: pengt@email.chop.edu if you have any questions
 # about the scripts or data
 
+setwd("~/code/SCRABBLE/R/")
+devtools::build(vignettes = FALSE)
+devtools::install()
+setwd("~/code/SCRABBLE/A_matrix_test/")
+source("analysis_library.R")
+dir.create("simulation_data")
+
+
 # load the libraries
 
 library(dplyr)
@@ -45,27 +53,23 @@ library(class)
 library(VIPER)
 library(SC3)
 
-setwd("~/code/SCRABBLE/A_matrix_test/")
-source("analysis_library.R")
-dir.create("simulation_data")
 
 # the following script is to generate the simulation data. Here we use
 # HPC to generate the simulation which could reduce the running time
 for(dropout_index in c(1:3) ){
 
-  for(seed_value in c(1:100)){
+  for(seed_value in c(1:5)){
 
     generate_save_data(dropout_index, seed_value)
 
   }
 }
 
-# the following script is to impute data. Here we use
+# new multi regression approach (scrabble_a)
 # HPC to impute the data using scrabble which could reduce the running time
 for(dropout_index in c(1:3) ){
 
-  for(seed_value in c(1:100)){
-
+  for(seed_value in c(1:5)){
     run_scrabble(dropout_index, seed_value)
 
   }
@@ -75,7 +79,7 @@ for(dropout_index in c(1:3) ){
 # HPC to impute the data using scrabble which could reduce the running time
 for(dropout_index in c(1:3) ){
 
-  for(seed_value in c(1:100)){
+  for(seed_value in c(1:5)){
 
     result <- calculate_error_splatter(drop_index, seed_value)
 
@@ -94,7 +98,7 @@ for(dropout_index in c(1:3) ){
 # HPC to impute the data using scrabble which could reduce the running time
 for(dropout_index in c(1:3) ){
 
-  for(seed_value in c(1:100)){
+  for(seed_value in c(1:5)){
 
     cal_cell_distribution(dropout_index, seed_value)
 
@@ -107,7 +111,7 @@ for(dropout_index in c(1:3) ){
 # HPC to impute the data using scrabble which could reduce the running time
 for(dropout_index in c(1:3) ){
 
-  for(seed_value in c(1:100)){
+  for(seed_value in c(1:5)){
 
     cal_gene_distribution(dropout_index, seed_value)
 
@@ -131,7 +135,7 @@ for(i in c(1:3)){
 
   error_gene_matrix <- c()
 
-  for(j in c(1:100)){
+  for(j in c(1:5)){
 
     tmp <- readRDS(file = paste0("error_data/error_",i,"_",j,".rds"))
 
@@ -342,7 +346,7 @@ for(i in c(1:3)){
 
   tmp1 <- c()
 
-  for(j in c(1:100)){
+  for(j in c(1:5)){
 
     tmp <- readRDS(file = paste0("data_cell_distribution/data_",i,"_",j,".rds"))
 
@@ -417,7 +421,7 @@ for(i in c(1:3)){
 
   tmp1 <- c()
 
-  for(j in c(1:100)){
+  for(j in c(1:5)){
 
     tmp <- readRDS(file = paste0("data_cell_distribution/data_",i,"_",j,".rds"))
 
