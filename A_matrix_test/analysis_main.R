@@ -5,7 +5,7 @@
 
 setwd("~/code/SCRABBLE/R/")
 devtools::build(vignettes = FALSE)
-devtools::install()
+devtools::install(build_vignettes = FALSE)
 setwd("~/code/SCRABBLE/A_matrix_test/")
 source("analysis_library.R")
 dir.create("simulation_data")
