@@ -77,11 +77,11 @@ for(dropout_index in c(1:3) ){
 
 # the following script is to calculate the errors. Here we use
 # HPC to impute the data using scrabble which could reduce the running time
-for(dropout_index in c(1:3) ){
+for(drop_index in c(1:3) ){
 
   for(seed_value in c(1:5)){
 
-    result <- calculate_error_splatter(drop_index, seed_value)
+    result <- run_error(drop_index, seed_value)
 
     dir.create(file.path('error_data'), showWarnings = FALSE)
 

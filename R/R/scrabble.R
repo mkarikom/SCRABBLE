@@ -75,7 +75,7 @@ scrabble <- function(data,
   # A <- getA(t(data[[3]]),beta,gamma,n_row)
   A <- t(data[[3]])%*%data[[3]] +gamma*diag(nrow(Y))
   # B <- getB(D, Z, Y, beta)
-  B <- getB(t(data[[3]]), Z, Y, beta)
+  B <- getB(data[[3]], t(Z), Y, beta)
 
   # initialize the X,Y,and Lambda for the iteration
   X <- Y
@@ -87,7 +87,6 @@ scrabble <- function(data,
   k <- 0
   error <- 1
 
-  browser()
   print(paste0('Imputation initialization is finished'))
   print(paste0('... ....'))
   while((k < nIter) & (error > error_out_threshold)){
@@ -126,8 +125,8 @@ scrabble <- function(data,
     if (k == 0){error = 1}
     k <- k + 1
     Lambda <- updateLambda(Lambda, newX, newY, gamma)
+    print(cat("\n error=",error,"\n"))
   }
-  browser()
   print(paste0('Imputation is finished'))
 
   return(recoverData(newX))

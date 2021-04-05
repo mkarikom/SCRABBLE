@@ -8,7 +8,7 @@ generate_simulation_splatter <- function(dropout_index, seed_value, nGenes = 800
   #        nGenes: the number of genes in the simulation data. The default is 800
 
   # Set up the parameters
-  
+
   # use individual batches to simulated donors.
   params = newSplatParams()
 
@@ -57,7 +57,6 @@ generate_simulation_splatter <- function(dropout_index, seed_value, nGenes = 800
   percentage_zeros = round(Matrix::nnzero(data_dropout == 0, na.counted = NA)/
                              (dim(data_dropout)[1]*dim(data_dropout)[2])*100)
 
-  browser()
   # generate the bulk RNAseq data
   data_bulk = data.frame(val = rowMeans(data_true))
 
@@ -72,7 +71,7 @@ generate_simulation_splatter <- function(dropout_index, seed_value, nGenes = 800
   data$data_dropout = data_dropout
   data$data_true = data_true
   data$percentage_zeros = percentage_zeros
-  
+
   # # get the pseudo bulk data D where each batch D[i,] is a bulk sample, and D[i,j] is the average cpm for gene j in bulk sample i
   data$data_bulk = aggregate(as.data.frame(t(sim@assays@data@listData$TrueCounts)),list(sim@colData$Batch),mean)
   rownames(data$data_bulk) = data$data_bulk[,1]
@@ -88,11 +87,11 @@ generate_simulation_splatter <- function(dropout_index, seed_value, nGenes = 800
       # a[i,j] = % celltype(cell j) in bulk sample i / number of cells
       # such that A*X = D' where D[i,] is the average expression per cell of all genes in bulk sample i
       A[i,j] = deconv[[i]][sim@colData$Group[j]] / ncells
-    }  
+    }
   }
-  
+
   data$data_A = A
-  
+
   return(data)
 }
 
@@ -126,8 +125,8 @@ run_scrabble <- function(dropout_index, seed_value){
   # Parameter in the function
   # dropout_index: the index of dropout_mid to control the dropout rate
   # seed_value: the random seed
-  
-  
+
+
   # load the data
   data = readRDS(file = paste0('simulation_data/simulation_data_dropout_index_',
                                dropout_index,
@@ -135,22 +134,22 @@ run_scrabble <- function(dropout_index, seed_value){
                                seed_value,
                                '.rds')
   )
-  
-  
+
+
   path = "imputation_scrabble_data/"
-  
+
   dir.create(file.path(path), showWarnings = FALSE)
-  
+
   # impute the data using DrImpute
   data1 = list()
-  
+
   # single cell data with dropped out values
   data1[[1]] = data$data_dropout
-  
+
   data1[[2]] = data$data_bulk
-  
+
   data1[[3]] = data$data_A
-  
+
   # set up the parameters
   parameter = c(1, 1e-06, 1e-04)
   # run scrabble
@@ -160,14 +159,16 @@ run_scrabble <- function(dropout_index, seed_value){
                     error_out_threshold = 1e-7,
                     nIter_inner = 100,
                     error_inner_threshold = 1e-5)
-  
+
   # write the data
   write.table(result,
               paste0(path, "scrabble_a_",dropout_index,"_",seed_value,".csv"),
               sep=',',
               row.names = F,
               col.names = F)
-  
+  print(cat("\n output written to:\n"))
+  print(paste0(path, "scrabble_a_",dropout_index,"_",seed_value,".csv"))
+  print(cat("\n"))
 }
 
 
@@ -192,6 +193,7 @@ run_error <- function(dropout_index, seed_value){
 
   options( warn = -1 )
   # load the simulationd data
+  browser()
   data_simulation = readRDS(file = paste0('simulation_data/simulation_data_dropout_index_',
                                           dropout_index,
                                           '_seed_',
