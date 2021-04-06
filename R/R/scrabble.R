@@ -69,13 +69,23 @@ scrabble <- function(data,
     Z <- getZ(as.matrix(data[[2]]), n_row)
   }
 
-  # prepare the matrices for the following iteration
-  D <- matrix(1, nrow = 1, ncol = n_row)
-  # A <- getA(D, beta, gamma, n_row)
-  # A <- getA(t(data[[3]]),beta,gamma,n_row)
-  A <- t(data[[3]])%*%data[[3]] +gamma*diag(nrow(Y))
-  # B <- getB(D, Z, Y, beta)
-  B <- getB(data[[3]], t(Z), Y, beta)
+  # browser()
+  if(length(data)==2){
+    # prepare the matrices for scrabble
+    print(cat("\n detected SCRABBLE data"))
+    D <- matrix(1, nrow = 1, ncol = n_row)
+    A <- getA(D, beta, gamma, n_row)
+    B <- getB(D, Z, Y, beta)
+  }else{
+    # prepare the matrices for multi-task
+    print(cat("\n detected mtSCRABBLE data"))
+    Z <- t(data[[2]]) # this is the actual bulk samples
+    D <- data[[3]]
+    # A <- t(data[[3]])%*%data[[3]] +gamma*diag(nrow(Y))
+    A <- getA(D, beta, gamma, n_row)
+    # B <- getB(data[[3]], t(Z), Y, beta)
+    B <- getB(D, Z, Y, beta)
+  }
 
   # initialize the X,Y,and Lambda for the iteration
   X <- Y
@@ -89,6 +99,7 @@ scrabble <- function(data,
 
   print(paste0('Imputation initialization is finished'))
   print(paste0('... ....'))
+
   while((k < nIter) & (error > error_out_threshold)){
 
     # update the X
@@ -113,6 +124,32 @@ scrabble <- function(data,
 
     tau <- alpha/gamma
 
+    # print(cat("\n dim(X)= \n"))
+    # print(dim(X))
+    #
+    # print(cat("\n ",class(S),"::S= \n",head(as.matrix(S)),"\n"))
+    #
+    # print(cat("\n min S: \n",min(S),"\n"))
+    # print(cat("\n min newX: \n",min(newX),"\n"))
+    # print(cat("\n min gamma_Y_B_Lambda: \n",min(gamma_Y_B_Lambda),"\n"))
+    # print(cat("\n min Y: \n",min(Y),"\n"))
+    # print(cat("\n min X: \n",min(X),"\n"))
+    # print(cat("\n min Lambda: \n",min(Lambda),"\n"))
+    #
+    # print(cat("\n max S: \n",max(S),"\n"))
+    # print(cat("\n max newX: \n",max(newX),"\n"))
+    # print(cat("\n max gamma_Y_B_Lambda: \n",max(gamma_Y_B_Lambda),"\n"))
+    # print(cat("\n max Y: \n",max(Y),"\n"))
+    # print(cat("\n max X: \n",max(X),"\n"))
+    # print(cat("\n max Lambda: \n",max(Lambda),"\n"))
+    #
+    # print(cat("\n norm S: \n",Matrix::norm(S),"\n"))
+    # print(cat("\n norm newX: \n",Matrix::norm(newX),"\n"))
+    # print(cat("\n norm gamma_Y_B_Lambda: \n",Matrix::norm(gamma_Y_B_Lambda),"\n"))
+    # print(cat("\n norm Y: \n",Matrix::norm(Y),"\n"))
+    # print(cat("\n norm X: \n",Matrix::norm(X),"\n"))
+    # print(cat("\n norm Lambda: \n",Matrix::norm(Lambda),"\n"))
+
     result <- svt(S, lambda = tau)
 
     s <- result[[1]] - tau
@@ -129,6 +166,7 @@ scrabble <- function(data,
   }
   print(paste0('Imputation is finished'))
 
+  # browser()
   return(recoverData(newX))
 
 }
