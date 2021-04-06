@@ -78,23 +78,16 @@ generate_simulation_splatter <- function(dropout_index, seed_value, nGenes = 800
     }
   }
 
-  # browser()
-  # define the data list for the simulation data
-  # indcluding: data_true: true data
-  #          data_dropout: dropout data
-  #             data_bluk: bulk data
-  #      percentage_zeros: dropout rate
-  #                 group: the group label
-
   data = list()
   data$data_bulk = data_bulk
   data$data_A = A
+  data$data_deconv = data.frame(dplyr::bind_rows(lapply(batchinds, function(x) table(sim@colData$Group[x])/length(x))))
 
   data$data_dropout = data_dropout
   data$data_true = data_true
   data$percentage_zeros = percentage_zeros
   data$group = colData(sim)@listData$Group
-
+  data$batch = colData(sim)@listData$Batch
   return(data)
 }
 
@@ -104,9 +97,8 @@ generate_save_data <- function(dropout_index, seed_value, nGenes = 800, nbulk = 
   # Parameter in the function
   # dropout_index: the index of dropout_mid to control the dropout rate
   # seed_value: the random seed
-
   # generate the simulation data
-  data_simulation = generate_simulation_splatter(dropout_index, seed_value, nGenes=nGenes, nbulk = nbulk, ncellsperbulk = ncellsperbulk)
+  data_simulation = generate_simulation_splatter(dropout_index, seed_value, nGenes=nGenes, nbulk = nbulk, ncellsperbulk = ncellsperbulk, dropout_mid=dropout_mid)
 
   # generate the folder saving the simulation data
   dir.create(file.path('simulation_data'), showWarnings = FALSE)
@@ -357,6 +349,76 @@ run_scrabble_m <- function(dropout_index, seed_value,parameter = c(1, 1e-06, 1e-
   print(cat("\n output written to: ",scrabble_path,"\n"))
 }
 
+run_sclda <- function(dropout_index, ncores, seed_value,parameter = c(1, 1e-06, 1e-04)){
+  # Parameter in the function
+  # dropout_index: the index of dropout_mid to control the dropout rate
+  # seed_value: the random seed
+
+  # load the data
+  datafn = paste0('simulation_data_dropout_index_',
+                  dropout_index,
+                  '_seed_',
+                  seed_value,
+                  '.rds')
+
+  data = readRDS(file = file.path(getwd(),'simulation_data', datafn))
+
+
+  scrabble_path = file.path(sclda_dir, paste0("sclda_",dropout_index,"_",seed_value))
+  dir.create(scrabble_path)
+
+  T_fn = file.path(scrabble_path,"T.csv")
+  C_fn = file.path(scrabble_path,"C.csv")
+  pDataC_fn = file.path(scrabble_path,"pDataC.csv")
+  trueP_fn = file.path(scrabble_path,"trueP.csv")
+
+  # write the data tables for E-step (this needs to be replaced with a direct interface)
+
+  # first, need all rownames to be in a column
+
+  write.csv(data$data_bulk,file=T_fn)
+  write.csv(data$data_dropout,file=C_fn)
+  write.csv(data.frame(cellID=colnames(data$data_dropout),cellType=data$group,sampleID=data$batch),file=pDataC_fn)
+  write.csv(data$data_deconv,file=trueP_fn)
+
+  # run scrabble
+
+  scLDA(data_dir=scrabble_path,
+        ncores=ncores,
+        parameter = parameter,
+        init='avg',
+        nIter = 60,
+        error_out_threshold = 1e-7,
+        nIter_inner = 100,
+        error_inner_threshold = 1e-5)
+
+  # # check error
+  sclda_error_fn = file.path(scrabble_path,"error.csv")
+  sclda_error = read.csv(sclda_error_fn)
+  P_fn = file.path(scrabble_path,"P.csv")
+  trueP_fn = file.path(scrabble_path,"trueP.csv")
+
+  data_trueP = melt(as.matrix(data$data_deconv))[,'value']
+  data_P = melt(as.matrix(read.csv(P_fn,row.names=NULL)))[,'value']
+  results = data.frame(data_P=data_P,data_trueP=data_trueP)
+
+  results = results %>% dplyr::summarise(RMSE = sqrt(mean((data_P-data_trueP)^2)) %>% round(.,4),
+                                         Pearson=cor(data_P,data_trueP) %>% round(.,4))
+  results$seed_value=c(seed_value)
+  results$dropout_index=c(dropout_index)
+
+  write.csv(results,sclda_error_fn)
+  # write the data
+  # write the data
+  # write.table(result,
+  #             scrabble_path,
+  #             sep=',',
+  #             row.names = F,
+  #             col.names = F)
+
+  browser()
+  print(cat("\n output written to: ",scrabble_path,"\n"))
+}
 
 
 ######## Data Analysis ##############
@@ -1562,7 +1624,6 @@ data_cor_vector <- function(data){
 }
 
 cal_cell_distribution <- function(dropout_index, seed_value){
-  browser()
   methods = c("True Data", "Dropout Data", "DrImpute", "scImpute", "mtSCRABBLE", "VIPER", "SCRABBLE")
 
   # load the simulationd data
@@ -1651,7 +1712,7 @@ cal_gene_distribution <- function(dropout_index, seed_value){
 
   group_info = unique(data_simulation$group)
 
-  data_cor = get_cor_data(drop_index, seed_value)
+  data_cor = get_cor_data(dropout_index, seed_value)
 
   data_cell = data_cor[[1]]
 
@@ -1732,7 +1793,7 @@ cal_gene_distribution <- function(dropout_index, seed_value){
   }
 
   # return(ratio1)
-  saveRDS(colMeans(ratio1),file = paste0("data_gene_distribution/data_",drop_index,"_",seed_value,".rds"))
+  saveRDS(colMeans(ratio1),file = paste0("data_gene_distribution/data_",dropout_index,"_",seed_value,".rds"))
 
 }
 

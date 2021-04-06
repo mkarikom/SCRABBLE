@@ -27,6 +27,6 @@ Imports: Rcpp (>= 0.12.13),
          methods,
          grDevices
 LinkingTo: Rcpp, RcppEigen
-RoxygenNote: 6.1.1
+RoxygenNote: 7.1.1
 Suggests: knitr,rmarkdown,BiocStyle
 VignetteBuilder: knitr

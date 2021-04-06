@@ -2,6 +2,7 @@
 importFrom(Rcpp, evalCpp)
 useDynLib(SCRABBLE, .registration = TRUE)
 export(scrabble)
+export(scLDA)
 export(plot_data)
 import(Rcpp)
 import(rARPACK)

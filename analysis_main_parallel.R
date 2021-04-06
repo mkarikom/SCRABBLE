@@ -10,7 +10,7 @@ devtools::install(build_vignettes = FALSE)
 
 setwd("/home/au/code/SCRABBLE/")
 source("/home/au/code/SCRABBLE/analysis_library.R")
-system("rm -r /home/au/code/SCRABBLE/A_matrix_parallel")
+# system("rm -r /home/au/code/SCRABBLE/A_matrix_parallel")
 dir.create("/home/au/code/SCRABBLE/A_matrix_parallel/")
 setwd("/home/au/code/SCRABBLE/A_matrix_parallel/")
 
@@ -70,14 +70,14 @@ dropout_mid = c(4, 5, 5.5)
 # number of genes
 ngenes = 1000 # default 800
 # number of bulk samples (splatter batches)
-nbulk = 2 # default 10
+nbulk = 3 # default 10
 
 # number of cells per bulk sample (cells per splatter batch)
 ncellsperbulk = 100 # default 100, if this is too low, svd has convergence issues
 
 # indices for seed and dropout
 ndrop = length(dropout_mid)
-nseed = 5
+nseed = 100
 seed_drop = expand.grid(1:ndrop,1:nseed)
 colnames(seed_drop) = c("dropout_index","seed_value")
 
@@ -209,8 +209,6 @@ foreach(i = 1:dim(seed_drop)[1], .combine = 'c',
   dropout_index = seed_drop$dropout_index[i]
   seed_value = seed_drop$seed_value[i]
   cal_cell_distribution(dropout_index, seed_value)
-  saveRDS(result,
-          file = paste0("data_cell_distribution/error_",dropout_index,"_",seed_value,".rds"))
 }
 
 
@@ -220,8 +218,6 @@ foreach(i = 1:dim(seed_drop)[1], .combine = 'c',
   dropout_index = seed_drop$dropout_index[i]
   seed_value = seed_drop$seed_value[i]
   cal_gene_distribution(dropout_index, seed_value)
-  saveRDS(result,
-          file = paste0("data_gene_distribution/error_",dropout_index,"_",seed_value,".rds"))
 }
 
 # Gather the errors
@@ -282,25 +278,25 @@ error_gene_list <- readRDS(file = "error_all_gene.rds")
 p <- list()
 
 # Dropout rate: 71%
-p[[1]] <- plot_comparison(error_list[[1]], "Error", 1400, 140)
+p[[1]] <- plot_comparison(error_list[[1]], "Imputation RMSE", 1400, 140)
 
-p[[2]] <- plot_comparison(error_cell_list[[1]], "Correlation", 1, 0.1)
+p[[2]] <- plot_comparison(error_cell_list[[1]], "Pearson Correlation (Cell)", 1, 0.1)
 
-p[[3]] <- plot_comparison(error_gene_list[[1]], "Correlation", 0.4, 0.04)
+p[[3]] <- plot_comparison(error_gene_list[[1]], "Pearson Correlation (Gene)", 0.4, 0.04)
 
 # Dropout rate: 83%
-p[[4]] <- plot_comparison(error_list[[2]], "Error", 1800, 180)
+p[[4]] <- plot_comparison(error_list[[2]], "Imputation RMSE", 1800, 180)
 
-p[[5]] <- plot_comparison(error_cell_list[[2]], "Correlation", 1, 0.1)
+p[[5]] <- plot_comparison(error_cell_list[[2]], "Pearson Correlation (Cell)", 1, 0.1)
 
-p[[6]] <- plot_comparison(error_gene_list[[2]], "Correlation", 0.3, 0.03)
+p[[6]] <- plot_comparison(error_gene_list[[2]], "Pearson Correlation (Gene)", 0.3, 0.03)
 
 # Dropout rate:87%
-p[[7]] <- plot_comparison(error_list[[3]], "Error",1800,180)
+p[[7]] <- plot_comparison(error_list[[3]], "Imputation RMSE",1800,180)
 
-p[[8]] <- plot_comparison(error_cell_list[[3]], "Correlation", 1, 0.1)
+p[[8]] <- plot_comparison(error_cell_list[[3]], "Pearson Correlation (Cell)", 1, 0.1)
 
-p[[9]] <- plot_comparison(error_gene_list[[3]], "Correlation", 0.2, 0.02)
+p[[9]] <- plot_comparison(error_gene_list[[3]], "Pearson Correlation (Gene)", 0.2, 0.02)
 
 # save the PDF files
 main <- grid.arrange(grobs = p,ncol = 3)
