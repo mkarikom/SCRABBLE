@@ -282,25 +282,25 @@ error_gene_list <- readRDS(file = "error_all_gene.rds")
 p <- list()
 
 # Dropout rate: 71%
-p[[1]] <- plot_comparison(error_list[[1]], "Error", 1400, 140)
+p[[1]] <- plot_comparison(error_list[[1]], "Imputation RMSE", 1400, 140)
 
-p[[2]] <- plot_comparison(error_cell_list[[1]], "Correlation", 1, 0.1)
+p[[2]] <- plot_comparison(error_cell_list[[1]], "Pearson Correlation (Cell)", 1, 0.1)
 
-p[[3]] <- plot_comparison(error_gene_list[[1]], "Correlation", 0.4, 0.04)
+p[[3]] <- plot_comparison(error_gene_list[[1]], "Pearson Correlation (Gene)", 0.4, 0.04)
 
 # Dropout rate: 83%
-p[[4]] <- plot_comparison(error_list[[2]], "Error", 1800, 180)
+p[[4]] <- plot_comparison(error_list[[2]], "Imputation RMSE", 1800, 180)
 
-p[[5]] <- plot_comparison(error_cell_list[[2]], "Correlation", 1, 0.1)
+p[[5]] <- plot_comparison(error_cell_list[[2]], "Pearson Correlation (Cell)", 1, 0.1)
 
-p[[6]] <- plot_comparison(error_gene_list[[2]], "Correlation", 0.3, 0.03)
+p[[6]] <- plot_comparison(error_gene_list[[2]], "Pearson Correlation (Gene)", 0.3, 0.03)
 
 # Dropout rate:87%
-p[[7]] <- plot_comparison(error_list[[3]], "Error",1800,180)
+p[[7]] <- plot_comparison(error_list[[3]], "Imputation RMSE",1800,180)
 
-p[[8]] <- plot_comparison(error_cell_list[[3]], "Correlation", 1, 0.1)
+p[[8]] <- plot_comparison(error_cell_list[[3]], "Pearson Correlation (Cell)", 1, 0.1)
 
-p[[9]] <- plot_comparison(error_gene_list[[3]], "Correlation", 0.2, 0.02)
+p[[9]] <- plot_comparison(error_gene_list[[3]], "Pearson Correlation (Gene)", 0.2, 0.02)
 
 # save the PDF files
 main <- grid.arrange(grobs = p,ncol = 3)
