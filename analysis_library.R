@@ -93,6 +93,7 @@ generate_simulation_splatter <- function(dropout_index, seed_value, nGenes = 800
   data$data_dropout = data_dropout
   data$data_true = data_true
   data$percentage_zeros = percentage_zeros
+  data$group = colData(sim)@listData$Group
 
   return(data)
 }
@@ -211,7 +212,7 @@ run_scimpute <- function(dropout_index, seed_value){
 
   # save the data
   write.table(data_dropout,
-              paste0(path, "data_imputation_scimpute_",dropout_index,"_",seed_value,".csv"),
+              paste0(path, "scimpute_",dropout_index,"_",seed_value,".csv"),
               sep=',',
               row.names = F,
               col.names = F
@@ -378,7 +379,6 @@ run_error <- function(dropout_index, seed_value){
 
   options( warn = -1 )
   # load the simulationd data
-  # browser()
   data_simulation = readRDS(file = paste0('simulation_data/simulation_data_dropout_index_',
                                           dropout_index,
                                           '_seed_',
@@ -1140,8 +1140,8 @@ get_cor_data <- function(dropout_index, seed_value){
 
   # load the simulationd data
 
-  data_simulation = readRDS(file = paste0('simulation_data/simulation_data_drop_index_',
-                                          dropout_index_index,
+  data_simulation = readRDS(file = paste0('simulation_data/simulation_data_dropout_index_',
+                                          dropout_index,
                                           '_seed_',
                                           seed_value,
                                           '.rds')
@@ -1274,6 +1274,31 @@ get_cor_data <- function(dropout_index, seed_value){
 
   data_scrabble_gene[is.na(data_scrabble_gene)] = 0
 
+  # load imputed data from mtscrabble
+
+  data_scrabble_m = read.table( file = paste0("imputation_scrabble_m_data/scrabble_m_",
+                                            dropout_index, "_",
+                                            seed_value,
+                                            ".csv") ,
+                              header = FALSE, sep=","
+  )
+
+  data_scrabble_m = data_scrabble_m[index,]
+
+
+  # cell-cell correlatio
+
+  data_scrabble_m_cell = cor(as.matrix(data_scrabble_m), method = "pearson")
+
+  data_scrabble_m_cell[is.na(data_scrabble_m_cell)] = 0
+
+  # gene-gene correlation
+
+  data_scrabble_m_gene = cor(t((data_scrabble_m)), method = "pearson")
+
+  data_scrabble_m_gene[is.na(data_scrabble_m_gene)] = 0
+
+
   data_cell = list()
 
   data_cell[[1]] = data_true_cell
@@ -1318,10 +1343,9 @@ get_cor_data <- function(dropout_index, seed_value){
 
 
 plot_cell_distribution <- function(dropout_index, seed_value){
-
   methods = c("True Data", "Dropout Data", "DrImpute", "scImpute", "mtSCRABBLE", "VIPER", "SCRABBLE")
   # load the simulationd data
-  data_simulation = readRDS(file = paste0('simulation_data/simulation_data_drop_index_',
+  data_simulation = readRDS(file = paste0('simulation_data/simulation_data_dropout_index_',
                                           dropout_index,
                                           '_seed_',
                                           seed_value,
@@ -1419,7 +1443,7 @@ plot_gene_distribution <- function(dropout_index, seed_value){
 
   methods = c("True Data", "Dropout Data", "DrImpute", "scImpute", "mtSCRABBLE", "VIPER", "SCRABBLE")
   # load the simulationd data
-  data_simulation = readRDS(file = paste0('simulation_data/simulation_data_drop_index_',
+  data_simulation = readRDS(file = paste0('simulation_data/simulation_data_dropout_index_',
                                           dropout_index,
                                           '_seed_',
                                           seed_value,
@@ -1538,12 +1562,12 @@ data_cor_vector <- function(data){
 }
 
 cal_cell_distribution <- function(dropout_index, seed_value){
-
+  browser()
   methods = c("True Data", "Dropout Data", "DrImpute", "scImpute", "mtSCRABBLE", "VIPER", "SCRABBLE")
 
   # load the simulationd data
 
-  data_simulation = readRDS(file = paste0('simulation_data/simulation_data_drop_index_',
+  data_simulation = readRDS(file = paste0('simulation_data/simulation_data_dropout_index_',
                                           dropout_index,
                                           '_seed_',
                                           seed_value,
@@ -1617,8 +1641,8 @@ cal_gene_distribution <- function(dropout_index, seed_value){
 
   methods = c("True Data", "Dropout Data", "DrImpute", "scImpute", "mtSCRABBLE", "VIPER", "SCRABBLE")
 
-  # load the simulationd data
-  data_simulation = readRDS(file = paste0('simulation_data/simulation_data_drop_index_',
+  # load the simulation data
+  data_simulation = readRDS(file = paste0('simulation_data/simulation_data_dropout_index_',
                                           dropout_index,
                                           '_seed_',
                                           seed_value,

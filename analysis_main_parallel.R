@@ -194,28 +194,34 @@ foreach(i = 1:dim(seed_drop)[1], .combine = 'c',
 # HPC to impute the data using scrabble which could reduce the running time
 
 dir.create(file.path('error_data'), showWarnings = FALSE)
-
 foreach(i = 1:dim(seed_drop)[1], .combine = 'c',
         .packages = c("doParallel")) %dopar% {
-  result <- run_error(drop_index, seed_value)
+  dropout_index = seed_drop$dropout_index[i]
+  seed_value = seed_drop$seed_value[i]
+  result <- run_error(dropout_index, seed_value)
   saveRDS(result,
-          file = paste0("error_data/error_",drop_index,"_",seed_value,".rds"))
+          file = paste0("error_data/error_",dropout_index,"_",seed_value,".rds"))
 }
 
-
+dir.create(file.path('data_cell_distribution'), showWarnings = FALSE)
 foreach(i = 1:dim(seed_drop)[1], .combine = 'c',
         .packages = c("doParallel")) %dopar% {
+  dropout_index = seed_drop$dropout_index[i]
+  seed_value = seed_drop$seed_value[i]
   cal_cell_distribution(dropout_index, seed_value)
   saveRDS(result,
-          file = paste0("error_data/error_",drop_index,"_",seed_value,".rds"))
+          file = paste0("data_cell_distribution/error_",dropout_index,"_",seed_value,".rds"))
 }
 
 
+dir.create(file.path('data_gene_distribution'), showWarnings = FALSE)
 foreach(i = 1:dim(seed_drop)[1], .combine = 'c',
-        .packages = c("doParallel")) %dopar% {
+        .packages = c("doParallel","SC3")) %dopar% {
+  dropout_index = seed_drop$dropout_index[i]
+  seed_value = seed_drop$seed_value[i]
   cal_gene_distribution(dropout_index, seed_value)
   saveRDS(result,
-          file = paste0("error_data/error_",drop_index,"_",seed_value,".rds"))
+          file = paste0("data_gene_distribution/error_",dropout_index,"_",seed_value,".rds"))
 }
 
 # Gather the errors
@@ -307,13 +313,13 @@ ggsave(filename="Figure_error.pdf",
 
 # plot the mean-variance figures in Figure 2 and the supplementary figures realted to Figure 2
 # ----------------------------------------------------------------------------
-for(drop_index in c(1:3)){
+for(dropout_index in c(1:3)){
 
   seed_value <- 10
 
-  p <- plot_meansd(drop_index, seed_value)
+  p <- plot_meansd(dropout_index, seed_value)
 
-  ggsave(filename=paste0("Figures_mean_variance_",drop_index,".pdf"),
+  ggsave(filename=paste0("Figures_mean_variance_",dropout_index,".pdf"),
          plot = p,
          width = 24,
          height = 3)
@@ -323,15 +329,15 @@ for(drop_index in c(1:3)){
 
 # plot the mean-variance figures in Figure 2 and the supplementary figures realted to Figure 2
 # ----------------------------------------------------------------------------
-for(drop_index in c(1:3)){
+for(dropout_index in c(1:3)){
 
   seed_value <- 10
 
-  p <- plot_comparison_tsne(drop_index,
+  p <- plot_comparison_tsne(dropout_index,
                             seed_value,
                             50,100)
 
-  ggsave(filename=paste0("Figures_tsne_",drop_index,".pdf"),
+  ggsave(filename=paste0("Figures_tsne_",dropout_index,".pdf"),
          plot = p,
          width = 24,
          height = 3)
@@ -340,13 +346,13 @@ for(drop_index in c(1:3)){
 
 # plot the mean-variance figures in Figure 2 and the supplementary figures realted to Figure 2
 # ----------------------------------------------------------------------------
-for(drop_index in c(1:3)){
+for(dropout_index in c(1:3)){
 
   seed_value <- 10
 
-  p <- plot_ma(drop_index, seed_value)
+  p <- plot_ma(dropout_index, seed_value)
 
-  ggsave(filename=paste0("Figure_ma_",drop_index,".pdf"),
+  ggsave(filename=paste0("Figure_ma_",dropout_index,".pdf"),
          plot = p,
          width = 24,
          height = 3)
@@ -356,13 +362,13 @@ for(drop_index in c(1:3)){
 
 # plot the distribution of cell-cell correlation figures in Figure 5 and the supplementary figures realted to Figure 5
 # ----------------------------------------------------------------------------
-for(drop_index in c(1:3)){
+for(dropout_index in c(1:3)){
 
   seed_value <- 10
 
-  p <- plot_cell_distribution(drop_index, seed_value)
+  p <- plot_cell_distribution(dropout_index, seed_value)
 
-  ggsave(filename=paste0("Figure_cell_distribution_",drop_index,".pdf"),
+  ggsave(filename=paste0("Figure_cell_distribution_",dropout_index,".pdf"),
          plot = p,
          width = 35,
          height = 12)
@@ -372,13 +378,13 @@ for(drop_index in c(1:3)){
 
 # plot the distribution of gene-gene correlation figures in Figure 5 and the supplementary figures realted to Figure 5
 # ----------------------------------------------------------------------------
-for(drop_index in c(1:3)){
+for(dropout_index in c(1:3)){
 
   seed_value <- 10
 
-  p <- plot_gene_distribution(drop_index, seed_value)
+  p <- plot_gene_distribution(dropout_index, seed_value)
 
-  ggsave(filename=paste0("Figure_gene_distribution_",drop_index,".pdf"),
+  ggsave(filename=paste0("Figure_gene_distribution_",dropout_index,".pdf"),
          plot = p,
          width = 35,
          height = 12)
@@ -390,9 +396,9 @@ for(drop_index in c(1:3)){
 
 methods <- c("True Data", "Dropout Data", "DrImpute", "scImpute", "mtSCRABBLE", "VIPER", "SCRABBLE")
 
-for(drop_index in c(1:3)){
+for(dropout_index in c(1:3)){
 
-  data_cor <- get_cor_data(drop_index, 10)
+  data_cor <- get_cor_data(dropout_index, 10)
 
   data_cell <- data_cor[[1]]
 
@@ -428,7 +434,7 @@ for(drop_index in c(1:3)){
 
   main <- grid.arrange(grobs = p,ncol = 8)
 
-  ggsave(filename= paste0("Figure_splatter_histogram_test_all_",drop_index,".pdf"),
+  ggsave(filename= paste0("Figure_splatter_histogram_test_all_",dropout_index,".pdf"),
          plot = main,
          width = 35,
          height = 8)
