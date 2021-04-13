@@ -1,5 +1,11 @@
-# run like Rscript sim1k.R && Rscript emjulia_cmd.R /home/au/code/SCRABBLE/juliaEM/sim1k /home/au/code/SCRABBLE/analysis_library.R 2
+# run like Rscript sim1k.R /home/au/code/SCRABBLE/juliaEM/sim1k /home/au/code/SCRABBLE/analysis_library.R 4 && Rscript emjulia_cmd.R /home/au/code/SCRABBLE/juliaEM/sim1k /home/au/code/SCRABBLE/analysis_library.R 2
 
+args <- commandArgs(trailingOnly=TRUE)
+
+### arguments
+datadir = args[1]
+libpath = args[2]
+tempcores = args[3]
 
 # ensure that R.home() is the same as ENV["R_HOME"] when RCall.jl was built, otherwise segfaults will occur
 Sys.setenv(JULIA_PROJECT = "/home/au/code/DTMwork")
@@ -48,11 +54,9 @@ library(VIPER)
 library(SC3)
 library(doParallel)
 
-setwd("/home/au/code/SCRABBLE/")
-source("/home/au/code/SCRABBLE/analysis_library.R")
-system("rm -r /home/au/code/SCRABBLE/juliaEM/sim1k")
-dir.create("/home/au/code/SCRABBLE/juliaEM/sim1k/",recursive=TRUE)
-setwd("/home/au/code/SCRABBLE/juliaEM/sim1k/")
+source(libpath)
+dir.create(datadir,recursive=TRUE)
+setwd(datadir)
 
 ############################################
 # begin cluster setup
@@ -61,7 +65,6 @@ if(exists("cl")){
   stopCluster(cl)
 }
 
-tempcores = 4 # so the bulk data gen won't run out of ram
 ncores = min(tempcores,detectCores(logical=FALSE)/2 - 1)
 registerDoParallel(cores=ncores)
 cl <- makeCluster(ncores, type="FORK")
