@@ -101,7 +101,7 @@ generate_save_data <- function(dropout_index, seed_value, nGenes = 800, nbulk = 
   data_simulation = generate_simulation_splatter(dropout_index, seed_value, nGenes=nGenes, nbulk = nbulk, ncellsperbulk = ncellsperbulk, dropout_mid=dropout_mid)
 
   # generate the folder saving the simulation data
-  dir.create(file.path('simulation_data'), showWarnings = FALSE)
+  dir.create(file.path('simulation_data'), showWarnings = FALSE, recursive=TRUE)
   # browser()
   # save the data as RDS format
   saveRDS(data_simulation,
@@ -362,10 +362,9 @@ run_sclda <- function(dropout_index, ncores, seed_value,parameter = c(1, 1e-06, 
                   '.rds')
 
   data = readRDS(file = file.path(getwd(),'simulation_data', datafn))
-
-
-  scrabble_path = file.path(sclda_dir, paste0("sclda_",dropout_index,"_",seed_value))
-  dir.create(scrabble_path)
+  path = "imputation_sclda_data"
+  scrabble_path = file.path(path, paste0("sclda_",dropout_index,"_",seed_value))
+  dir.create(scrabble_path,recursive = TRUE)
 
   T_fn = file.path(scrabble_path,"T.csv")
   C_fn = file.path(scrabble_path,"C.csv")
@@ -416,8 +415,7 @@ run_sclda <- function(dropout_index, ncores, seed_value,parameter = c(1, 1e-06, 
   #             row.names = F,
   #             col.names = F)
 
-  browser()
-  print(cat("\n output written to: ",scrabble_path,"\n"))
+  cat("\n error output written to: ",sclda_error_fn,"\n")
 }
 
 

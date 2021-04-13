@@ -1,6 +1,6 @@
 # ensure that R.home() is the same as ENV["R_HOME"] when RCall.jl was built, otherwise segfaults will occur
 Sys.setenv(JULIA_PROJECT = "/home/au/code/DTMwork")
-# Sys.setenv(LD_LIBRARY_PATH = "/usr/lib/R/lib")
+Sys.setenv(LD_LIBRARY_PATH = "/usr/lib/R/lib")
 
 
 
@@ -57,28 +57,34 @@ system("rm -r /home/au/code/SCRABBLE/juliaEM")
 dir.create("/home/au/code/SCRABBLE/juliaEM/")
 setwd("/home/au/code/SCRABBLE/juliaEM/")
 
+############################################
+# begin cluster setup
+############################################
 if(exists("cl")){
   stopCluster(cl)
 }
 
-cl <- parallel::makeCluster(15)
+tempcores = 15
+ncores = min(tempcores,detectCores(logical=FALSE)/2 - 1)
+registerDoParallel(cores=ncores)
+cl <- makeCluster(ncores, type="FORK")
+############################################
+# end cluster setup
+############################################
 
-# midpoint of logistic function for dropout in splatter
-# dropout_mid = c(4, 5, 5.5)
+
 dropout_mid = c(4, 6.5, 8)
-# number of genes
 ngenes = 2000 # default 800
-# number of bulk samples (splatter batches)
-nbulk = 15 # default 10
+nbulk = 7 # default 10
 
 ldacores = min(15,nbulk)
 
 # number of cells per bulk sample (cells per splatter batch)
-ncellsperbulk = 5000 # default 100, if this is too low, svd has convergence issues
+ncellsperbulk = 100 # default 100, if this is too low, svd has convergence issues
 
 # indices for seed and dropout
 ndrop = length(dropout_mid)
-nseed = 10
+nseed = 2
 seed_drop = expand.grid(1:ndrop,1:nseed)
 colnames(seed_drop) = c("dropout_index","seed_value")
 
@@ -90,7 +96,6 @@ gamma_p <- 1e-04 # default 1e-04
 
 # the following script is to generate the simulation data. Here we use
 # HPC to generate the simulation which could reduce the running time
-dir.create("simulation_data")
 foreach(i = 1:dim(seed_drop)[1], .combine = 'c',
         .export = c("generate_simulation_splatter","generate_save_data"),
         .packages = c("splatter", "doParallel","edgeR")) %dopar% {
@@ -139,15 +144,31 @@ foreach(i = 1:dim(seed_drop)[1], .combine = 'c',
 # ###
 # ###########################
 
-sclda_dir = file.path(getwd(),"imputation_sclda_data")
-dir.create(sclda_dir, showWarnings = TRUE)
-sclda_error_fn = file.path(getwd(),"imputation_sclda_data","error.csv")
-sclda_error <- data.frame(dropout_index=numeric(),
-                 seed_value=numeric(),
-                 RMSE=numeric(),
-                 Pearson=numeric(),
-                 stringsAsFactors=FALSE)
-write.csv(sclda_error,sclda_error_fn)
+############################################
+# begin cluster setup
+############################################
+if(exists("cl")){
+  stopCluster(cl)
+}
+
+tempcores = 2
+ncores = min(tempcores,detectCores(logical=FALSE)/2 - 1)
+registerDoParallel(cores=ncores)
+cl <- makeCluster(ncores, type="FORK")
+############################################
+# end cluster setup
+############################################
+
+
+# sclda_dir = file.path(getwd(),"imputation_sclda_data")
+# dir.create(sclda_dir, showWarnings = TRUE)
+# sclda_error_fn = file.path(getwd(),"imputation_sclda_data","error.csv")
+# sclda_error <- data.frame(dropout_index=numeric(),
+#                  seed_value=numeric(),
+#                  RMSE=numeric(),
+#                  Pearson=numeric(),
+#                  stringsAsFactors=FALSE)
+# write.csv(sclda_error,sclda_error_fn)
 
 foreach(i = 1:dim(seed_drop)[1], .combine = 'c',
         .export = c("run_sclda"),
