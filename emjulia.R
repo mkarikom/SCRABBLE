@@ -64,7 +64,7 @@ if(exists("cl")){
   stopCluster(cl)
 }
 
-tempcores = 2 # so the bulk data gen won't run out of ram
+tempcores = 1 # so the bulk data gen won't run out of ram
 ncores = min(tempcores,detectCores(logical=FALSE)/2 - 1)
 registerDoParallel(cores=ncores)
 cl <- makeCluster(ncores, type="FORK")
