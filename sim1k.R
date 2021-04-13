@@ -1,5 +1,6 @@
 # run like Rscript sim1k.R && Rscript emjulia_cmd.R /home/au/code/SCRABBLE/juliaEM/sim1k /home/au/code/SCRABBLE/analysis_library.R 2
 
+
 # ensure that R.home() is the same as ENV["R_HOME"] when RCall.jl was built, otherwise segfaults will occur
 Sys.setenv(JULIA_PROJECT = "/home/au/code/DTMwork")
 Sys.setenv(LD_LIBRARY_PATH = "/usr/lib/R/lib")
@@ -49,9 +50,9 @@ library(doParallel)
 
 setwd("/home/au/code/SCRABBLE/")
 source("/home/au/code/SCRABBLE/analysis_library.R")
-system("rm -r /home/au/code/SCRABBLE/juliaEM/sim2k")
-dir.create("/home/au/code/SCRABBLE/juliaEM/sim2k/",recursive=TRUE)
-setwd("/home/au/code/SCRABBLE/juliaEM/sim2k/")
+system("rm -r /home/au/code/SCRABBLE/juliaEM/sim1k")
+dir.create("/home/au/code/SCRABBLE/juliaEM/sim1k/",recursive=TRUE)
+setwd("/home/au/code/SCRABBLE/juliaEM/sim1k/")
 
 ############################################
 # begin cluster setup
@@ -60,7 +61,7 @@ if(exists("cl")){
   stopCluster(cl)
 }
 
-tempcores = 2 # so the bulk data gen won't run out of ram
+tempcores = 4 # so the bulk data gen won't run out of ram
 ncores = min(tempcores,detectCores(logical=FALSE)/2 - 1)
 registerDoParallel(cores=ncores)
 cl <- makeCluster(ncores, type="FORK")
@@ -73,11 +74,13 @@ dropout_mid = c(4, 6.5, 8)
 ngenes = 20000 # default 800
 nbulk = 8 # default 10
 ldacores = min(15,nbulk)
-ncellsperbulk = 2000 # default 100, if this is too low, svd has convergence issues
+ncellsperbulk = 1000 # default 100, if this is too low, svd has convergence issues
 ndrop = length(dropout_mid)
 nseed = 100
 seed_drop = expand.grid(1:ndrop,1:nseed)
 colnames(seed_drop) = c("dropout_index","seed_value")
+
+
 
 # scrabble parameters
 alpha_p <- 1 # default 1
@@ -95,3 +98,4 @@ foreach(i = 1:dim(seed_drop)[1], .combine = 'c',
         }
 
 save(dropout_mid,ngenes,nbulk,ldacores,ncellsperbulk,ndrop,nseed,seed_drop, file = "dataparams.RData")
+
