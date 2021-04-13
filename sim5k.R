@@ -1,4 +1,4 @@
-# run like Rscript sim10k.R /home/au/code/SCRABBLE/juliaEM/sim10k /home/au/code/SCRABBLE/analysis_library.R 1 && Rscript emjulia_cmd.R /home/au/code/SCRABBLE/juliaEM/sim10k /home/au/code/SCRABBLE/analysis_library.R 2
+# run like Rscript sim5k.R /home/au/code/SCRABBLE/juliaEM/sim5k /home/au/code/SCRABBLE/analysis_library.R 1 && Rscript emjulia_cmd.R /home/au/code/SCRABBLE/juliaEM/sim5k /home/au/code/SCRABBLE/analysis_library.R 2
 
 args <- commandArgs(trailingOnly=TRUE)
 
