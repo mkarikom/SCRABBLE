@@ -391,31 +391,31 @@ run_sclda <- function(dropout_index, ncores, seed_value,parameter = c(1, 1e-06, 
         nIter_inner = 100,
         error_inner_threshold = 1e-5)
 
-  # # check error
-  sclda_error_fn = file.path(scrabble_path,"error.csv")
-  sclda_error = read.csv(sclda_error_fn)
-  P_fn = file.path(scrabble_path,"P.csv")
-  trueP_fn = file.path(scrabble_path,"trueP.csv")
-
-  data_trueP = melt(as.matrix(data$data_deconv))[,'value']
-  data_P = melt(as.matrix(read.csv(P_fn,row.names=NULL)))[,'value']
-  results = data.frame(data_P=data_P,data_trueP=data_trueP)
-
-  results = results %>% dplyr::summarise(RMSE = sqrt(mean((data_P-data_trueP)^2)) %>% round(.,4),
-                                         Pearson=cor(data_P,data_trueP) %>% round(.,4))
-  results$seed_value=c(seed_value)
-  results$dropout_index=c(dropout_index)
-
-  write.csv(results,sclda_error_fn)
-  # write the data
-  # write the data
-  # write.table(result,
-  #             scrabble_path,
-  #             sep=',',
-  #             row.names = F,
-  #             col.names = F)
-
-  cat("\n error output written to: ",sclda_error_fn,"\n")
+  # # # check error
+  # sclda_error_fn = file.path(scrabble_path,"error.csv")
+  # sclda_error = read.csv(sclda_error_fn)
+  # P_fn = file.path(scrabble_path,"P.csv")
+  # trueP_fn = file.path(scrabble_path,"trueP.csv")
+  #
+  # data_trueP = melt(as.matrix(data$data_deconv))[,'value']
+  # data_P = melt(as.matrix(read.csv(P_fn,row.names=NULL)))[,'value']
+  # results = data.frame(data_P=data_P,data_trueP=data_trueP)
+  #
+  # results = results %>% dplyr::summarise(RMSE = sqrt(mean((data_P-data_trueP)^2)) %>% round(.,4),
+  #                                        Pearson=cor(data_P,data_trueP) %>% round(.,4))
+  # results$seed_value=c(seed_value)
+  # results$dropout_index=c(dropout_index)
+  # browser()
+  # write.csv(results,file=sclda_error_fn)
+  # # write the data
+  # # write the data
+  # # write.table(result,
+  # #             scrabble_path,
+  # #             sep=',',
+  # #             row.names = F,
+  # #             col.names = F)
+  #
+  # cat("\n error output written to: ",sclda_error_fn,"\n")
 }
 
 
