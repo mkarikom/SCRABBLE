@@ -1,0 +1,22 @@
+Package: mtSCRABBLE
+Type: Package
+Title: Impute scRNAseq Data Method
+Version: 0.0.1
+Author: Matt Karikomi; Tao Peng; Kai Tan
+Maintainer: Matt Karikomi <mattkarikomi@gmail.com>
+Description: Backend support for DURIAN.  Including updates for gradient updates on sparse matrices.
+License: GPL-3
+Encoding: UTF-8
+Depends: R(>= 3.3)
+LazyData: true
+Imports: Rcpp (>= 0.12.13), 
+         irlba,
+         rARPACK, 
+         pracma, 
+         reshape2,
+         methods,
+         dplyr
+LinkingTo: Rcpp, RcppEigen
+RoxygenNote: 7.1.2
+Suggests: knitr,rmarkdown,BiocStyle
+VignetteBuilder: knitr
